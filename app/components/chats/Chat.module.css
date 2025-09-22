@@ -1,0 +1,96 @@
+.chatCard {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 6px 18px rgba(22, 27, 34, 0.08);
+}
+
+.chatInner {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+}
+
+.scrollArea {
+  min-height: 240px;
+  max-height: 480px;
+  overflow: auto;
+  padding: 12px;
+  border-radius: 8px;
+  background: #f7f9fb;
+}
+
+.emptyState {
+  color: #7a8794;
+  text-align: center;
+  padding: 32px 0;
+}
+
+.messageRow {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: white;
+  background: #3b82f6;
+  flex-shrink: 0;
+}
+
+.messageBubble {
+  max-width: 90%;
+  background: white;
+  border-radius: 10px;
+  padding: 10px 12px;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+}
+
+.messageMeta {
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 6px;
+}
+
+.timestamp {
+  margin-left: 8px;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.messageContent {
+  white-space: pre-wrap;
+  color: #0f172a;
+}
+
+.inputRow {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.sendWrap {
+  display: flex;
+  align-items: center;
+}
+
+[data-role="assistant"] .avatar {
+  background: #0ea5a4;
+}
+
+[data-role="system"] .avatar {
+  background: #6b7280;
+}
