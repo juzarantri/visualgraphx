@@ -1,0 +1,112 @@
+.containerFlex {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.sidebar {
+  width: 30%;
+  min-width: 280px;
+  padding-left: 8px;
+}
+
+.controls {
+  margin-bottom: 8px;
+  display: flex;
+  gap: 8px;
+}
+
+
+
+.emptySpin {
+  text-align: center;
+  padding: 24px;
+}
+
+.pagerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.pageInfo {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.mainPanel {
+  width: 70%;
+  padding-left: 0;
+}
+
+.panelInner {
+  border-radius: 8px;
+  padding: 6px;
+  width: 100%;
+}
+
+.sessionItem {
+  cursor: pointer;
+  background: #ffffff;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  border: 1px solid #f0f0f0;
+}
+
+.sessionItemSelected {
+  background: #eef6ff;
+  border: 1px solid #b6e0fe;
+}
+
+.sessionItemContent {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.sessionId {
+  word-break: break-all;
+  display: block;
+  font-weight: 600;
+}
+
+.sessionMeta {
+  color: #64748b;
+  font-size: 12px;
+  margin-top: 6px;
+}
+
+.sessionHeader {
+  margin-bottom: 8px;
+}
+
+.sessionHeaderStrong {
+  word-break: break-all;
+  font-weight: 600;
+}
+
+.sessionHeaderMeta {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.viewerBox {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 6px 18px rgba(22, 27, 34, 0.06);
+  width: 100%;
+}
+
+.viewerScroll {
+  max-height: 640px;
+}
+
+.noMessages {
+  color: #94a3b8;
+}

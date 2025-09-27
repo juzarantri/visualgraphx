@@ -1,0 +1,146 @@
+[
+    {
+        "product_ref": "decals-general-performance-standard",
+        "title": "Decals - General Performance",
+        "description": "General Performance Decals – Affordable, Reliable, and Professional-Grade. Fast production, versatile use, suitable for branding, events, signage. Crafted from industry-trusted materials for professional finish.",
+        "price": 11.99,
+        "url": "https://visualgraphx.com/decals-stickers/decals/decals-standard/",
+        "image_url": null,
+        "metadata": {
+            "category": "Decals",
+            "subcategory": "Standard Decals",
+            "product_type": "General Performance",
+            "customizable": true,
+            "size_options": [
+                "Custom Size",
+                "2\" x 2\""
+            ],
+            "printing_options": {
+                "ink_finish": [
+                    "Gloss",
+                    "Matte",
+                    "FLX+"
+                ]
+            },
+            "laminating_options": [
+                "Laminate"
+            ],
+            "cutting_options": {
+                "cut_type": [
+                    "Through Cut",
+                    "Kiss Cut",
+                    "No Cutting"
+                ],
+                "graphic_shape": [
+                    "Rectangle",
+                    "Ellipse",
+                    "Freeform"
+                ],
+                "corner_radius": [
+                    "None",
+                    "1/8\"",
+                    "3/16\"",
+                    "1/4\"",
+                    "1/2\"",
+                    "3/4\"",
+                    "1\"",
+                    "1-1/2\""
+                ]
+            },
+            "finishing_options": [
+                "Paneling"
+            ],
+            "proof_options": [
+                "Digital Proof",
+                "No Proof Required"
+            ],
+            "turnaround_options": [
+                "RUSH (1 Day)",
+                "RUSH (2 Days)",
+                "Standard",
+                "I Can Wait"
+            ],
+            "company_contact": {
+                "phone": "480-269-7585",
+                "email": "hello@visualgraphx.com",
+                "address": "7931 E Pecos Rd. Bldg 4 - Suite 162, Mesa, Arizona 85212"
+            }
+        },
+        "technical_data": "Professional-grade vinyl, fast turnaround, durable for indoor/outdoor use, compatible with wide range of finishing and cutting options. Industry-standard adhesives and substrates."
+    },
+    {
+        "product_ref": "arlon-wraps-vehicle",
+        "title": "Arlon Wraps – Vehicle & Fleet Films",
+        "description": "Premium Colour Change wrap film with FLITE Technology® for full and partial vehicle wraps. Features ultra-smooth finish, excellent repositionability, clean removability, and high durability. Multiple finishes available.",
+        "price": null,
+        "url": "https://visualgraphx.com/wraps-66/vehicle/arlon-wraps/",
+        "image_url": null,
+        "metadata": {
+            "category": "Wraps",
+            "product_type": "Premium Colour Change cast film",
+            "brand": "Arlon",
+            "finish_options": [
+                "Gloss",
+                "Matte",
+                "Satin"
+            ],
+            "available_colors": "Multiple (refer to full catalog)",
+            "technology": "FLITE Technology® for fast, bubble-free and repositionable installation",
+            "use_cases": [
+                "Vehicle wraps",
+                "Fleet graphics",
+                "Partial wraps"
+            ],
+            "durability": "Up to 10 years outdoor",
+            "sizes": "Custom per roll width/length",
+            "features": [
+                "Bubble-free air channels",
+                "PET protective film for gloss finishes",
+                "Suitable for demanding surfaces"
+            ]
+        },
+        "technical_data": "Performance: Excellent repositionability, bubble-free application. Composition: Repositionable cast film, 76-84 microns thickness. Installation: FLITE Technology® for easier handling. Durability: Up to 10 years outdoors. Protects surfaces, rated for curves, channels, and deep recesses."
+    },
+    {
+        "product_ref": "scrim-banner-standard",
+        "title": "Scrim Banner",
+        "description": "High-tensile scrim banner vinyl for indoor/outdoor signage. Made from polyester fabric and vinyl layers with block-out layer for zero shine-through. Ideal for events and retail applications.",
+        "price": null,
+        "url": "https://visualgraphx.com/banners-67/scrim/scrim_banner/",
+        "image_url": null,
+        "metadata": {
+            "category": "Banners",
+            "product_type": "Scrim Banner Vinyl",
+            "material": "Polyester fabric with block-out PVC vinyl",
+            "size_options": [
+                "Custom width/height",
+                "Roll sizes available"
+            ],
+            "weight": "13-15oz (typically)",
+            "finishing_options": [
+                "Hemmed",
+                "Grommets"
+            ],
+            "use_cases": [
+                "Indoor",
+                "Outdoor events",
+                "Retail signage",
+                "Gallery displays"
+            ],
+            "compatible_with": [
+                "Dye ink",
+                "Pigment ink",
+                "UV cure"
+            ],
+            "features": [
+                "High tensile strength",
+                "Block-out for non-shine",
+                "Hem/grommet ready",
+                "Accepts heavy ink loads",
+                "Tear-resistant",
+                "Non-reflective matte finish"
+            ]
+        },
+        "technical_data": "Performance: Tear-resistant, dimensional stability, UV and water resistance, instant dry coating, suitable for outdoor display. Composition: Three-layer fabric, minimum 400gsm thickness. Finish: Matte, hem or grommet finishing available."
+    }
+]

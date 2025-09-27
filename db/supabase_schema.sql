@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS records (
   url text,
   image_url text,
   metadata jsonb DEFAULT '{}'::jsonb,
+  technical_data text DEFAULT ''::text,
   embedding vector(1536),
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
@@ -47,6 +48,18 @@ CREATE TRIGGER trg_records_updated_at
   BEFORE UPDATE ON records
   FOR EACH ROW
   EXECUTE PROCEDURE update_updated_at_column();
+
+-- make sure existing databases get the new column (safe: only run if table exists)
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_tables WHERE schemaname NOT IN ('pg_catalog', 'information_schema') AND tablename = 'records'
+  ) THEN
+    ALTER TABLE records
+      ADD COLUMN IF NOT EXISTS technical_data text DEFAULT ''::text;
+  END IF;
+END
+$$;
 
 -- vector index for records.embedding
 CREATE INDEX IF NOT EXISTS idx_records_embedding ON records USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);

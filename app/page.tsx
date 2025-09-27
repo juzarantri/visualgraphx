@@ -8,7 +8,7 @@ import {
   DatabaseOutlined,
 } from "@ant-design/icons";
 import Chat from "./components/chats";
-import ChatHistory from "./components/ChatHistory";
+import ChatHistory from "./components/chathistory";
 import Datasets from "./components/Datasets";
 
 const { Sider, Content, Header } = Layout;
