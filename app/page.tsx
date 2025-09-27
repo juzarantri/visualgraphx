@@ -9,7 +9,7 @@ import {
 } from "@ant-design/icons";
 import Chat from "./components/chats";
 import ChatHistory from "./components/chathistory";
-import Datasets from "./components/Datasets";
+import Datasets from "./components/datasets";
 
 const { Sider, Content, Header } = Layout;
 

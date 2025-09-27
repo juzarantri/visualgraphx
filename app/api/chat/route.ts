@@ -23,7 +23,7 @@ export async function POST(req: Request) {
 
     // Build request to OpenAI Chat Completions (stream)
     const payload = {
-      model: "gpt-4o-mini",
+      model: "gpt-4o",
       messages: messages.map((m: IncomingMessage) => ({
         role: m.role,
         content: m.content,
