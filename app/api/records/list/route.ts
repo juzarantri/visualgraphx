@@ -21,7 +21,9 @@ export async function GET(req: Request) {
     // simple list: return up to 1000 records (change as needed)
     const { data, error } = await supabase
       .from("records")
-      .select("product_ref,title,description,price,created_at")
+      .select(
+        "product_ref,title,description,price,technical_data, url, image_url, created_at"
+      )
       .order("created_at", { ascending: false })
       .limit(1000);
 

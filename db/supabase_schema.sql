@@ -64,3 +64,16 @@ $$;
 -- vector index for records.embedding
 CREATE INDEX IF NOT EXISTS idx_records_embedding ON records USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
 
+-- helper SQL function to perform similarity search against records.embedding
+-- Returns the top `match_count` records ordered by distance to the provided vector
+-- Note: uses the pgvector distance operator <-> which works with vector indexes
+CREATE OR REPLACE FUNCTION match_records(query vector(1536), match_count int DEFAULT 5)
+RETURNS SETOF records
+LANGUAGE sql STABLE
+AS $$
+  SELECT r.* FROM records r
+  WHERE r.embedding IS NOT NULL
+  ORDER BY r.embedding <-> query
+  LIMIT match_count;
+$$;
+
