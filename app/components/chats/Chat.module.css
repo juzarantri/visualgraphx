@@ -6,6 +6,18 @@
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 6px 18px rgba(22, 27, 34, 0.08);
+  /* allow the card to fill its parent so internal areas can flex and scroll properly */
+  height: 100%;
+  box-sizing: border-box;
+}
+
+/* Make sure the Ant Design card body fills the card and uses flex so children can stretch/scroll correctly */
+.chatCard :global(.ant-card-body) {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 0; /* keep padding on .chatInner to avoid double-padding */
+  min-height: 0;
 }
 
 .chatInner {
@@ -14,15 +26,21 @@
   gap: 12px;
   padding: 18px;
   background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+  /* allow children to shrink so the scroll area can size correctly inside a flex column */
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
 }
 
 .scrollArea {
-  min-height: 240px;
-  max-height: 480px;
+  /* let the scroll area take remaining space and be the only scrollable container */
+  flex: 1 1 auto;
+  min-height: 0; /* important for flexbox children to allow proper scrolling */
   overflow: auto;
   padding: 12px;
   border-radius: 8px;
   background: #f7f9fb;
+  height: 100%
 }
 
 .emptyState {

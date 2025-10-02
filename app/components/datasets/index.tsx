@@ -1,6 +1,16 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { Card, Button, message, Divider, Input, Space, Form, Spin, Typography } from "antd";
+import {
+  Card,
+  Button,
+  message,
+  Divider,
+  Input,
+  Space,
+  Form,
+  Spin,
+  Typography,
+} from "antd";
 import type { FC } from "react";
 import styles from "../chats/Chat.module.css";
 import { UploadOutlined } from "@ant-design/icons";
@@ -209,45 +219,119 @@ const Datasets: FC = () => {
         <div className={styles.chatInner} style={{ padding: 12 }}>
           <Spin spinning={uploading} tip="Uploading & creating embeddings...">
             <div style={{ display: "flex", gap: 20 }}>
-              <RecordsList records={records.filter((r) => {
-                if (!search) return true;
-                const s = search.toLowerCase();
-                return (String(r.product_ref || "").toLowerCase().includes(s) || (r.title || "").toLowerCase().includes(s));
-              })} loading={loadingRecords} search={search} onSearchChange={setSearch} onRefresh={loadRecords} onEdit={startEdit} />
+              <RecordsList
+                records={records.filter((r) => {
+                  if (!search) return true;
+                  const s = search.toLowerCase();
+                  return (
+                    String(r.product_ref || "")
+                      .toLowerCase()
+                      .includes(s) || (r.title || "").toLowerCase().includes(s)
+                  );
+                })}
+                loading={loadingRecords}
+                search={search}
+                onSearchChange={setSearch}
+                onRefresh={loadRecords}
+                onEdit={startEdit}
+              />
 
               <div style={{ flex: 1 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
                   <div>
                     <h2 style={{ margin: 0 }}>Datasets</h2>
-                    <div style={{ color: "#666", fontSize: 13 }}>Upload JSON/CSV, embeddings will be created server-side.</div>
+                    <div style={{ color: "#666", fontSize: 13 }}>
+                      Upload JSON/CSV, embeddings will be created server-side.
+                    </div>
                   </div>
 
-                  <UploadBox onUploadFile={handleUpload} uploading={uploading} />
+                  <UploadBox
+                    onUploadFile={handleUpload}
+                    uploading={uploading}
+                  />
                 </div>
 
                 <Divider />
 
-                <div style={{ display: "flex", gap: 12, alignItems: "stretch" }}>
-                  <div style={{ flex: 1, background: "#f6ffed", border: "1px solid #b7eb8f", padding: 12, borderRadius: 6 }}>
-                    <div style={{ fontSize: 18, fontWeight: 700 }}>{uploadResult ? uploadResult.inserted : 0}</div>
+                <div
+                  style={{ display: "flex", gap: 12, alignItems: "stretch" }}
+                >
+                  <div
+                    style={{
+                      flex: 1,
+                      background: "#f6ffed",
+                      border: "1px solid #b7eb8f",
+                      padding: 12,
+                      borderRadius: 6,
+                    }}
+                  >
+                    <div style={{ fontSize: 18, fontWeight: 700 }}>
+                      {uploadResult ? uploadResult.inserted : 0}
+                    </div>
                     <div style={{ color: "#666" }}>Inserted</div>
                   </div>
 
-                  <div style={{ flex: 1, background: "#fff1f0", border: "1px solid #ffa39e", padding: 12, borderRadius: 6 }}>
-                    <div style={{ fontSize: 18, fontWeight: 700 }}>{uploadResult ? uploadResult.duplicates.length : 0}</div>
+                  <div
+                    style={{
+                      flex: 1,
+                      background: "#fff1f0",
+                      border: "1px solid #ffa39e",
+                      padding: 12,
+                      borderRadius: 6,
+                    }}
+                  >
+                    <div style={{ fontSize: 18, fontWeight: 700 }}>
+                      {uploadResult ? uploadResult.duplicates.length : 0}
+                    </div>
                     <div style={{ color: "#666" }}>Duplicates</div>
                   </div>
 
-                  <div style={{ flex: 1, background: "#e6f7ff", border: "1px solid #91d5ff", padding: 12, borderRadius: 6 }}>
-                    <div style={{ fontSize: 18, fontWeight: 700 }}>{totalUploaded ?? (uploadResult ? uploadResult.inserted + uploadResult.duplicates.length : 0)}</div>
+                  <div
+                    style={{
+                      flex: 1,
+                      background: "#e6f7ff",
+                      border: "1px solid #91d5ff",
+                      padding: 12,
+                      borderRadius: 6,
+                    }}
+                  >
+                    <div style={{ fontSize: 18, fontWeight: 700 }}>
+                      {totalUploaded ??
+                        (uploadResult
+                          ? uploadResult.inserted +
+                            uploadResult.duplicates.length
+                          : 0)}
+                    </div>
                     <div style={{ color: "#666" }}>Total processed</div>
                   </div>
                 </div>
 
                 <div style={{ marginTop: 12 }}>
                   <Space>
-                    <Button onClick={() => openModal(uploadResult ? uploadResult.duplicates : [])} disabled={!uploadResult || uploadResult.duplicates.length === 0}>View duplicates</Button>
-                    <Button onClick={() => { setUploadResult(null); setTotalUploaded(null); }}>Clear</Button>
+                    <Button
+                      onClick={() =>
+                        openModal(uploadResult ? uploadResult.duplicates : [])
+                      }
+                      disabled={
+                        !uploadResult || uploadResult.duplicates.length === 0
+                      }
+                    >
+                      View duplicates
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setUploadResult(null);
+                        setTotalUploaded(null);
+                      }}
+                    >
+                      Clear
+                    </Button>
                   </Space>
                 </div>
               </div>
@@ -255,46 +339,73 @@ const Datasets: FC = () => {
           </Spin>
         </div>
 
-        <DuplicatesModal open={modalVisible} items={modalData} highlightedRef={highlightedRef} onClose={() => setModalVisible(false)} onEdit={startEdit} />
+        <DuplicatesModal
+          open={modalVisible}
+          items={modalData}
+          highlightedRef={highlightedRef}
+          onClose={() => setModalVisible(false)}
+          onEdit={startEdit}
+        />
 
-        <EditDrawer open={drawerVisible} record={editing} onClose={() => {
-          setDrawerVisible(false);
-          setEditing(null);
-          form.resetFields();
-          if (editingFromModal) {
-            setModalVisible(true);
-            setEditingFromModal(false);
-          }
-        }} onSave={async (vals) => {
-          try {
-            const payload = [{ ...editing, ...vals }];
-            const res = await fetch("/api/records/upsert", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-            const j = await res.json();
-            if (!res.ok) throw new Error(j?.error || "Save failed");
-            message.success("Saved");
-            // update duplicates modal data if the edited item is present there
-            try {
-              const updated = Array.isArray(j.records) && j.records.length > 0 ? j.records[0] : null;
-              if (updated) {
-                setModalData((prev) => prev.map((m) => (m.product_ref === updated.product_ref ? { ...m, ...updated } : m)));
-                setHighlightedRef(updated.product_ref);
-                setTimeout(() => setHighlightedRef(null), 3000);
-              }
-            } catch (e) {
-              // ignore
-            }
+        <EditDrawer
+          open={drawerVisible}
+          record={editing}
+          onClose={() => {
+            setDrawerVisible(false);
+            setEditing(null);
+            form.resetFields();
             if (editingFromModal) {
               setModalVisible(true);
               setEditingFromModal(false);
             }
-            setEditing(null);
-            await loadRecords();
-          } catch (e: unknown) {
-            const em = e instanceof Error ? e.message : String(e);
-            message.error("Save failed: " + em);
-            throw e;
-          }
-        }} />
+          }}
+          onSave={async (vals) => {
+            try {
+              const payload = [{ ...editing, ...vals }];
+              const res = await fetch("/api/records/upsert", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+              });
+              const j = await res.json();
+              if (!res.ok) throw new Error(j?.error || "Save failed");
+              message.success("Saved");
+              // close the drawer and reset the form after successful save
+              setDrawerVisible(false);
+              form.resetFields();
+              // update duplicates modal data if the edited item is present there
+              try {
+                const updated =
+                  Array.isArray(j.records) && j.records.length > 0
+                    ? j.records[0]
+                    : null;
+                if (updated) {
+                  setModalData((prev) =>
+                    prev.map((m) =>
+                      m.product_ref === updated.product_ref
+                        ? { ...m, ...updated }
+                        : m
+                    )
+                  );
+                  setHighlightedRef(updated.product_ref);
+                  setTimeout(() => setHighlightedRef(null), 3000);
+                }
+              } catch (e) {
+                // ignore
+              }
+              if (editingFromModal) {
+                setModalVisible(true);
+                setEditingFromModal(false);
+              }
+              setEditing(null);
+              await loadRecords();
+            } catch (e: unknown) {
+              const em = e instanceof Error ? e.message : String(e);
+              message.error("Save failed: " + em);
+              throw e;
+            }
+          }}
+        />
       </Card>
     </>
   );
