@@ -89,9 +89,9 @@ CREATE TRIGGER trg_faqs_updated_at
 -- Enhanced Product Search
 CREATE OR REPLACE FUNCTION match_records(
   query_embedding vector(1536), 
-  match_count int DEFAULT 5,
-  similarity_threshold float DEFAULT 0.5,
-  category_filter text DEFAULT NULL
+  match_count int DEFAULT 5
+  -- similarity_threshold float DEFAULT 0.5,
+  -- category_filter text DEFAULT NULL
 )
 RETURNS TABLE (
   id uuid,
@@ -119,9 +119,9 @@ AS $$
     r.technical_data,
     1 - (r.embedding <=> query_embedding) as similarity
   FROM records r
-  WHERE r.embedding IS NOT NULL
-    AND 1 - (r.embedding <=> query_embedding) > similarity_threshold
-    AND (category_filter IS NULL OR r.metadata->>'category' = category_filter)
+  -- WHERE r.embedding IS NOT NULL
+    -- AND 1 - (r.embedding <=> query_embedding) > similarity_threshold
+    -- AND (category_filter IS NULL OR r.metadata->>'category' = category_filter)
   ORDER BY r.embedding <=> query_embedding
   LIMIT match_count;
 $$;
@@ -129,8 +129,8 @@ $$;
 -- FAQ Search
 CREATE OR REPLACE FUNCTION match_faqs(
   query_embedding vector(1536), 
-  match_count int DEFAULT 5,
-  similarity_threshold float DEFAULT 0.5
+  match_count int DEFAULT 5
+  -- similarity_threshold float DEFAULT 0.5
 )
 RETURNS TABLE (
   id uuid,
@@ -141,15 +141,15 @@ RETURNS TABLE (
 ) 
 LANGUAGE sql STABLE
 AS $$
-  SELECT 
+  SELECT
     f.id,
     f.product_ref,
     f.question,
     f.answer,
-    1 - (f.embedding <=> query_embedding) as similarity
+    (1 - (f.embedding <=> query_embedding)) AS similarity
   FROM product_faqs f
   WHERE f.embedding IS NOT NULL
-    AND 1 - (f.embedding <=> query_embedding) > similarity_threshold
-  ORDER BY f.embedding <=> query_embedding
+    AND (1 - (f.embedding <=> query_embedding)) >= 0.5
+  ORDER BY similarity DESC
   LIMIT match_count;
 $$;

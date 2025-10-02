@@ -45,7 +45,7 @@ export default function Page() {
         <Header
           style={{
             background: "#fff",
-            padding: "0 16px",
+            padding: "0 16px",  
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
@@ -74,7 +74,8 @@ export default function Page() {
           footer={null}
         >
           <p>
-            Copy this script tag into your site's HTML to embed the chat widget:
+            Copy this script tag into your site&apos;s HTML to embed the chat
+            widget:
           </p>
           <Input.TextArea readOnly value={scriptTag} autoSize />
           <div style={{ marginTop: 12, textAlign: "right" }}>

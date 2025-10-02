@@ -11,6 +11,22 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+// Lightweight structured logger helper
+function log(level: string, message: string, data?: any) {
+  const ts = new Date().toISOString();
+  try {
+    if (data !== undefined)
+      console.log(
+        `[${ts}] ${level.toUpperCase()} - ${message}`,
+        JSON.stringify(data)
+      );
+    else console.log(`[${ts}] ${level.toUpperCase()} - ${message}`);
+  } catch (e) {
+    // fallback if JSON.stringify fails
+    console.log(`[${ts}] ${level.toUpperCase()} - ${message}`, data);
+  }
+}
+
 type Role = "user" | "assistant" | "system" | "tool";
 type IncomingMessage = {
   role: Role;
@@ -43,11 +59,6 @@ const SEARCH_PRODUCTS_FUNCTION = {
         description: "Maximum number of products to return (default: 3)",
         default: 3,
       },
-      category: {
-        type: "string",
-        description:
-          "Optional category filter (e.g., 'Decals', 'Wraps', 'Banners')",
-      },
     },
     required: ["query"],
   },
@@ -77,11 +88,11 @@ const SEARCH_FAQS_FUNCTION = {
 async function searchProducts(
   query: string,
   limit: number = 3,
-  category: string | null = null,
   supabaseClient: any,
   openaiApiKey: string
 ) {
   try {
+    log("info", "searchProducts called", { query, limit });
     const embRes = await fetch("https://api.openai.com/v1/embeddings", {
       method: "POST",
       headers: {
@@ -93,29 +104,45 @@ async function searchProducts(
         input: query,
       }),
     });
-
-    if (!embRes.ok) return [];
-
-    const embJson = await embRes.json();
-    const queryEmbedding = embJson.data?.[0]?.embedding;
-
-    if (!Array.isArray(queryEmbedding)) return [];
-
-    const { data, error } = await supabaseClient.rpc("match_records", {
-      query_embedding: queryEmbedding,
-      match_count: limit,
-      similarity_threshold: 0.5,
-      category_filter: category,
-    });
-
-    if (error) {
-      console.error("match_records error:", error);
+    if (!embRes.ok) {
+      log("error", "embeddings request failed", { status: embRes.status });
       return [];
     }
 
+    const embJson = await embRes.json();
+    const queryEmbedding = embJson.data?.[0]?.embedding;
+    log("debug", "embedding received", {
+      ok: Array.isArray(queryEmbedding),
+      length: Array.isArray(queryEmbedding) ? queryEmbedding.length : 0,
+      preview: Array.isArray(queryEmbedding)
+        ? queryEmbedding.slice(0, 5)
+        : null,
+    });
+
+    if (!Array.isArray(queryEmbedding)) return [];
+
+    const rpcArgs = {
+      query_embedding: queryEmbedding,
+      match_count: limit,
+    } as any;
+
+    log("info", "calling supabase.rpc match_records", {
+      match_count: rpcArgs.match_count,
+      query_embedding_length: rpcArgs.query_embedding.length,
+    });
+
+    const { data, error } = await supabaseClient.rpc("match_records", rpcArgs);
+
+    if (error) {
+      log("error", "match_records error", error);
+      return [];
+    }
+
+    log("info", "match_records returned", { count: (data || []).length });
+
     return data || [];
   } catch (error) {
-    console.error("Product search error:", error);
+    log("error", "Product search error", error);
     return [];
   }
 }
@@ -127,6 +154,7 @@ async function searchFAQs(
   openaiApiKey: string
 ) {
   try {
+    log("info", "searchFAQs called", { query, limit });
     const embRes = await fetch("https://api.openai.com/v1/embeddings", {
       method: "POST",
       headers: {
@@ -138,28 +166,47 @@ async function searchFAQs(
         input: query,
       }),
     });
-
-    if (!embRes.ok) return [];
-
-    const embJson = await embRes.json();
-    const queryEmbedding = embJson.data?.[0]?.embedding;
-
-    if (!Array.isArray(queryEmbedding)) return [];
-
-    const { data, error } = await supabaseClient.rpc("match_faqs", {
-      query_embedding: queryEmbedding,
-      match_count: limit,
-      similarity_threshold: 0.5,
-    });
-
-    if (error) {
-      console.error("match_faqs error:", error);
+    if (!embRes.ok) {
+      log("error", "embeddings request failed for FAQs", {
+        status: embRes.status,
+      });
       return [];
     }
 
+    const embJson = await embRes.json();
+    const queryEmbedding = embJson.data?.[0]?.embedding;
+    log("debug", "faq embedding received", {
+      ok: Array.isArray(queryEmbedding),
+      length: Array.isArray(queryEmbedding) ? queryEmbedding.length : 0,
+      preview: Array.isArray(queryEmbedding)
+        ? queryEmbedding.slice(0, 5)
+        : null,
+    });
+
+    if (!Array.isArray(queryEmbedding)) return [];
+
+    const rpcArgs = {
+      query_embedding: queryEmbedding,
+      match_count: limit,
+    } as any;
+
+    log("info", "calling supabase.rpc match_faqs", {
+      match_count: rpcArgs.match_count,
+      query_embedding_length: rpcArgs.query_embedding.length,
+    });
+
+    const { data, error } = await supabaseClient.rpc("match_faqs", rpcArgs);
+
+    if (error) {
+      log("error", "match_faqs error", error);
+      return [];
+    }
+
+    log("info", "match_faqs returned", { count: (data || []).length });
+
     return data || [];
   } catch (error) {
-    console.error("FAQ search error:", error);
+    log("error", "FAQ search error", error);
     return [];
   }
 }
@@ -170,6 +217,11 @@ async function processConversationWithFunctions(
   openaiApiKey: string
 ) {
   let conversationMessages = [...messages];
+  log("info", "processConversationWithFunctions start", {
+    initialMessages: conversationMessages.length,
+    preview: conversationMessages.slice(0, 3),
+    supabaseAvailable: !!supabaseClient,
+  });
 
   while (true) {
     const payload: any = {
@@ -202,12 +254,31 @@ async function processConversationWithFunctions(
       body: JSON.stringify(payload),
     });
 
+    log("info", "OpenAI chat completion requested", {
+      status: res.status,
+      ok: res.ok,
+    });
+
     if (!res.ok) {
+      const text = await res.text().catch(() => "<no body>");
+      log("error", "OpenAI error response", {
+        status: res.status,
+        bodyPreview: text.slice(0, 1000),
+      });
       throw new Error(`OpenAI error: ${res.status}`);
     }
 
     const response = await res.json();
+    log("debug", "OpenAI chat completion response", {
+      responseSummary: { choices: response.choices?.length ?? 0 },
+    });
     const assistantMessage = response.choices[0].message;
+
+    log("info", "assistant message received", {
+      role: assistantMessage?.role,
+      content_length: assistantMessage?.content?.length ?? 0,
+      tool_calls: assistantMessage?.tool_calls?.length ?? 0,
+    });
 
     if (!assistantMessage.tool_calls) {
       return makeStreamingRequest(
@@ -218,18 +289,26 @@ async function processConversationWithFunctions(
     }
 
     conversationMessages.push(assistantMessage);
-
     for (const toolCall of assistantMessage.tool_calls) {
+      log("info", "processing tool call", {
+        id: toolCall.id,
+        name: toolCall.function.name,
+        arguments: toolCall.function.arguments,
+      });
       if (toolCall.function.name === "search_products" && supabaseClient) {
         try {
           const args = JSON.parse(toolCall.function.arguments);
           const products = await searchProducts(
             args.query,
             args.limit || 3,
-            args.category || null,
             supabaseClient,
             openaiApiKey
           );
+
+          log("info", "searchProducts returned items", {
+            count: products.length,
+            preview: products.slice(0, 2),
+          });
 
           const productText = products
             .map((p: any) => {
@@ -255,6 +334,7 @@ async function processConversationWithFunctions(
             tool_call_id: toolCall.id,
           });
         } catch (error) {
+          log("error", "error processing search_products tool call", error);
           conversationMessages.push({
             role: "tool",
             content: "Error searching products.",
@@ -271,6 +351,11 @@ async function processConversationWithFunctions(
             openaiApiKey
           );
 
+          log("info", "searchFAQs returned items", {
+            count: faqs.length,
+            preview: faqs,
+          });
+
           const faqText = faqs
             .map((f: any) => {
               return `Q: ${f.question}\nA: ${f.answer}\n(Product: ${
@@ -285,6 +370,7 @@ async function processConversationWithFunctions(
             tool_call_id: toolCall.id,
           });
         } catch (error) {
+          log("error", "error processing search_faqs tool call", error);
           conversationMessages.push({
             role: "tool",
             content: "Error searching FAQs.",
@@ -331,7 +417,17 @@ async function makeStreamingRequest(
     body: JSON.stringify(payload),
   });
 
+  log("info", "OpenAI streaming request sent", {
+    status: res.status,
+    ok: res.ok,
+  });
+
   if (!res.ok || !res.body) {
+    const text = await res.text().catch(() => "<no body>");
+    log("error", "OpenAI streaming error response", {
+      status: res.status,
+      preview: text.slice(0, 1000),
+    });
     throw new Error(`OpenAI streaming error: ${res.status}`);
   }
 
@@ -345,12 +441,22 @@ export async function POST(req: Request) {
       session_id?: string;
     };
     const messages = body.messages;
+    log("info", "POST /api/chat received", {
+      hasMessages: Array.isArray(messages),
+      session_id: body.session_id,
+    });
     if (!messages)
       return NextResponse.json({ error: "messages required" }, { status: 400 });
 
     const SUPABASE_URL = process.env.SUPABASE_URL;
     const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
     const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+
+    log("debug", "env-check", {
+      hasSupabaseUrl: !!SUPABASE_URL,
+      hasSupabaseServiceKey: !!SUPABASE_SERVICE_ROLE_KEY,
+      hasOpenAiKey: !!OPENAI_API_KEY,
+    });
 
     if (!OPENAI_API_KEY)
       return NextResponse.json(
@@ -363,6 +469,7 @@ export async function POST(req: Request) {
       supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
         auth: { persistSession: false },
       });
+      log("info", "supabase client created", { url: SUPABASE_URL });
     }
 
     const streamingResponse = await processConversationWithFunctions(
@@ -370,6 +477,10 @@ export async function POST(req: Request) {
       supabase,
       OPENAI_API_KEY
     );
+
+    log("info", "received streaming response object", {
+      ok: !!streamingResponse?.body,
+    });
 
     const stream = new ReadableStream({
       async start(controller) {
@@ -380,7 +491,8 @@ export async function POST(req: Request) {
         while (true) {
           const { value, done } = await reader.read();
           if (done) break;
-          buffer += decoder.decode(value, { stream: true });
+          const chunk = decoder.decode(value, { stream: true });
+          buffer += chunk;
 
           const parts = buffer.split("\n\n");
           buffer = parts.pop() || "";
@@ -411,7 +523,7 @@ export async function POST(req: Request) {
                   );
                 }
               } catch {
-                // ignore JSON parse errors
+                // ignore JSON parse errors for streaming chunks
               }
             }
           }
@@ -439,6 +551,7 @@ export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
     const session_id = url.searchParams.get("session_id");
+    log("info", "GET /api/chat start", { session_id });
     if (!session_id)
       return NextResponse.json(
         { error: "session_id required" },
@@ -464,9 +577,13 @@ export async function GET(req: Request) {
       .single();
 
     if (error) {
+      log("error", "supabase fetch session error", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    log("info", "supabase fetch session success", {
+      chats_count: (data?.chats ?? []).length,
+    });
     return NextResponse.json({ chats: data?.chats ?? [] });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
