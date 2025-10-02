@@ -12,8 +12,17 @@ const EditDrawer: FC<{
   const [form] = Form.useForm();
 
   React.useEffect(() => {
-    if (record) form.setFieldsValue(record);
-    else form.resetFields();
+    if (record) {
+      const copy = { ...record };
+      if (copy.faq && typeof copy.faq !== "string") {
+        try {
+          copy.faq = JSON.stringify(copy.faq, null, 2);
+        } catch (e) {
+          // ignore
+        }
+      }
+      form.setFieldsValue(copy);
+    } else form.resetFields();
   }, [record, form]);
 
   return (
@@ -45,6 +54,12 @@ const EditDrawer: FC<{
           </Form.Item>
           <Form.Item label="Technical Data" name="technical_data">
             <Input.TextArea rows={3} />
+          </Form.Item>
+          <Form.Item label="FAQ (JSON array)" name="faq">
+            <Input.TextArea
+              rows={6}
+              placeholder='[ { "q": "...", "a":"..." } ]'
+            />
           </Form.Item>
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
             <Button onClick={onClose}>Cancel</Button>

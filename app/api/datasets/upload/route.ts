@@ -1,3 +1,7 @@
+// ============================================
+// /api/datasets/upload/route.ts
+// ============================================
+
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
@@ -13,10 +17,7 @@ export async function POST(req: Request) {
     const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY)
       return NextResponse.json(
-        {
-          error:
-            "Supabase env not set (SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY)",
-        },
+        { error: "Supabase env not set" },
         { status: 500 }
       );
 
@@ -24,7 +25,6 @@ export async function POST(req: Request) {
       auth: { persistSession: false },
     });
 
-    // collect product_ref values from the uploaded items
     const refs = items
       .map((it) => (it && it.product_ref ? String(it.product_ref).trim() : ""))
       .filter(Boolean);
@@ -35,7 +35,6 @@ export async function POST(req: Request) {
         { status: 400 }
       );
 
-    // query existing records with those refs
     const { data, error } = await supabase
       .from("records")
       .select("product_ref")
@@ -45,14 +44,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
 
     const existing = new Set((data || []).map((r: any) => r.product_ref));
-
     const duplicates = items.filter((it) => existing.has(it.product_ref));
     const news = items.filter((it) => !existing.has(it.product_ref));
 
-    // If there are new rows, build embeddings for them (embedding each full JSON object)
-    // and insert/upsert into records in batches to avoid hitting rate limits.
     let inserted = 0;
     let inserted_refs: string[] = [];
+    let faq_inserted = 0;
+
     if (news.length > 0) {
       const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
       if (!OPENAI_API_KEY)
@@ -61,10 +59,18 @@ export async function POST(req: Request) {
           { status: 500 }
         );
 
-      // prepare inputs by embedding the full JSON object for each item
-      const inputs = news.map((it) => JSON.stringify(it));
+      // Generate embeddings for products (title + description + technical_data)
+      const productInputs = news.map((it) => {
+        const parts = [
+          it.title || "",
+          it.description || "",
+          it.technical_data || "",
+        ]
+          .filter(Boolean)
+          .join(" ");
+        return parts;
+      });
 
-      // helper to chunk arrays
       const chunk = <T>(arr: T[], size: number) => {
         const out: T[][] = [];
         for (let i = 0; i < arr.length; i += size)
@@ -72,10 +78,11 @@ export async function POST(req: Request) {
         return out;
       };
 
-      const BATCH_SIZE = 50; // safe default batch size
-      const inputBatches = chunk(inputs, BATCH_SIZE);
+      const BATCH_SIZE = 50;
+      const inputBatches = chunk(productInputs, BATCH_SIZE);
       const embeddings: number[][] = [];
 
+      // Get product embeddings
       for (let i = 0; i < inputBatches.length; i++) {
         const batch = inputBatches[i];
         const embRes = await fetch("https://api.openai.com/v1/embeddings", {
@@ -104,7 +111,6 @@ export async function POST(req: Request) {
         );
         embeddings.push(...batchEmb);
 
-        // small delay between batches to be kinder to rate limits
         if (i < inputBatches.length - 1)
           await new Promise((res) => setTimeout(res, 200));
       }
@@ -115,7 +121,7 @@ export async function POST(req: Request) {
           { status: 500 }
         );
 
-      // attach embeddings to the news items and prepare rows for upsert
+      // Insert products into records table
       const rowsToUpsert = news.map((it, idx) => ({
         product_ref: it.product_ref,
         title: it.title ?? null,
@@ -124,6 +130,7 @@ export async function POST(req: Request) {
         url: it.url ?? null,
         image_url: it.image_url ?? null,
         metadata: it.metadata ?? {},
+        faq: it.faq ?? [],
         technical_data: it.technical_data ?? "",
         embedding: embeddings[idx] ?? null,
       }));
@@ -131,17 +138,91 @@ export async function POST(req: Request) {
       const { error: upsertErr } = await supabase
         .from("records")
         .upsert(rowsToUpsert, { onConflict: "product_ref" });
+
       if (upsertErr)
         return NextResponse.json({ error: upsertErr.message }, { status: 500 });
+
       inserted = rowsToUpsert.length;
       inserted_refs = rowsToUpsert.map((r) => r.product_ref).filter(Boolean);
+
+      // Now handle FAQs - extract and generate embeddings
+      const faqsToInsert: any[] = [];
+      const faqInputs: string[] = [];
+
+      for (const item of news) {
+        const faqs = item.faq || [];
+        if (Array.isArray(faqs) && faqs.length > 0) {
+          for (const faq of faqs) {
+            if (faq.q && faq.a) {
+              faqsToInsert.push({
+                product_ref: item.product_ref,
+                question: faq.q,
+                answer: faq.a,
+              });
+              // Combine question + answer for embedding
+              faqInputs.push(`${faq.q} ${faq.a}`);
+            }
+          }
+        }
+      }
+
+      // Generate embeddings for FAQs if any exist
+      if (faqInputs.length > 0) {
+        const faqBatches = chunk(faqInputs, BATCH_SIZE);
+        const faqEmbeddings: number[][] = [];
+
+        for (let i = 0; i < faqBatches.length; i++) {
+          const batch = faqBatches[i];
+          const embRes = await fetch("https://api.openai.com/v1/embeddings", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${OPENAI_API_KEY}`,
+            },
+            body: JSON.stringify({
+              model: "text-embedding-3-small",
+              input: batch,
+            }),
+          });
+
+          if (!embRes.ok) {
+            console.error("FAQ embedding failed, skipping");
+            break;
+          }
+
+          const embJson = await embRes.json();
+          const batchEmb = (embJson.data || []).map(
+            (d: any) => d.embedding || []
+          );
+          faqEmbeddings.push(...batchEmb);
+
+          if (i < faqBatches.length - 1)
+            await new Promise((res) => setTimeout(res, 200));
+        }
+
+        // Insert FAQs with embeddings
+        if (faqEmbeddings.length === faqsToInsert.length) {
+          const faqRows = faqsToInsert.map((faq, idx) => ({
+            ...faq,
+            embedding: faqEmbeddings[idx],
+          }));
+
+          const { error: faqErr } = await supabase
+            .from("product_faqs")
+            .insert(faqRows);
+
+          if (!faqErr) {
+            faq_inserted = faqRows.length;
+          }
+        }
+      }
     }
 
-    // return only duplicates (and the inserted count and refs) to the frontend per request
     return NextResponse.json({
       ok: true,
       inserted,
       inserted_refs: inserted_refs || [],
+      faq_inserted,
       duplicates,
     });
   } catch (err: unknown) {

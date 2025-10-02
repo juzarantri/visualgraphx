@@ -167,7 +167,16 @@ const Datasets: FC = () => {
   const saveEdit = async () => {
     try {
       const values = await form.validateFields();
-      const payload = [{ ...editing, ...values }];
+      // ensure faq is an object/array, not a raw string
+      const normalized = { ...editing, ...values };
+      if (typeof normalized.faq === "string") {
+        try {
+          normalized.faq = JSON.parse(normalized.faq);
+        } catch (e) {
+          // keep as string if parsing fails
+        }
+      }
+      const payload = [normalized];
       const res = await fetch("/api/records/upsert", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -361,7 +370,15 @@ const Datasets: FC = () => {
           }}
           onSave={async (vals) => {
             try {
-              const payload = [{ ...editing, ...vals }];
+              const normalized = { ...editing, ...vals };
+              if (typeof normalized.faq === "string") {
+                try {
+                  normalized.faq = JSON.parse(normalized.faq);
+                } catch (e) {
+                  // leave as-is
+                }
+              }
+              const payload = [normalized];
               const res = await fetch("/api/records/upsert", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },

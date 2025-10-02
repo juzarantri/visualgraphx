@@ -36,6 +36,13 @@ const RecordsList: FC<{
               <Button key="edit" size="small" onClick={() => onEdit(item)}>
                 Edit
               </Button>,
+              <Button
+                key="faq"
+                size="small"
+                onClick={() => onEdit({ ...item, _openFaqPreview: true })}
+              >
+                FAQ ({(item.faq || []).length})
+              </Button>,
             ]}
           >
             <List.Item.Meta

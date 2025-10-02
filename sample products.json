@@ -7,7 +7,7 @@
         "url": "https://visualgraphx.com/decals-stickers/decals/decals-standard/",
         "image_url": null,
         "metadata": {
-            "category": "Decals",
+                "category": "Decals",
             "subcategory": "Standard Decals",
             "product_type": "General Performance",
             "customizable": true,
@@ -66,6 +66,40 @@
                 "address": "7931 E Pecos Rd. Bldg 4 - Suite 162, Mesa, Arizona 85212"
             }
         },
+        "faq": [
+            {
+                "q": "What are decals and how are they different from stickers?",
+                "a": "Think of decals as the \"premium\" version of stickers. They're printed on durable vinyl, made to last longer, and hold up well indoors or outdoors compared to paper stickers."
+            },
+            {
+                "q": "Can these decals be used outdoors in rain or sun?",
+                "a": "Yes, absolutely. Our decals are weather-resistant and hold up well in sun, rain, and everyday outdoor conditions."
+            },
+            {
+                "q": "Will decals damage walls, windows, or car paint when removed?",
+                "a": "Nope. As long as the surface was clean before application, the decals peel off without leaving messy residue or damaging paint or glass."
+            },
+            {
+                "q": "Can I reuse or reposition my decals?",
+                "a": "They're designed for one-time use, so once they're applied, they'll stick firmly. If you're looking for reusable options, we can suggest cling material instead."
+            },
+            {
+                "q": "Are these decals dishwasher safe if used on mugs or bottles?",
+                "a": "For drinkware, we recommend hand-washing to keep the print looking fresh. They'll survive a few dishwasher cycles, but hand-wash is the safe bet."
+            },
+            {
+                "q": "Do you offer decals for floor graphics or high-traffic areas?",
+                "a": "Yes, we do. We use a heavier laminate for floor decals so they hold up under foot traffic and can be slip-resistant."
+            },
+            {
+                "q": "Are the decals see-through or fully opaque?",
+                "a": "By default, they're opaque for strong colors. But if you need clear decals or see-through window graphics, we can print those too."
+            },
+            {
+                "q": "Can I apply decals myself, or do I need professional help?",
+                "a": "You can definitely do it yourself. We'll guide you with simple steps — just clean the surface, peel, and smooth it down. For larger decals, having two people helps a lot."
+            }
+        ],
         "technical_data": "Professional-grade vinyl, fast turnaround, durable for indoor/outdoor use, compatible with wide range of finishing and cutting options. Industry-standard adhesives and substrates."
     },
     {

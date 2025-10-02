@@ -1,3 +1,13 @@
+// ============================================
+// /api/chat/route.ts
+// ============================================
+
+// Example Usage:
+
+// "What outdoor decals do you have?" → searches products
+// "Can decals be used outdoors?" → searches FAQs
+// "Tell me about your Arlon wraps and installation tips" → searches both
+
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
@@ -16,11 +26,11 @@ type IncomingMessage = {
   }>;
 };
 
-// Function definition for OpenAI
+// Function definitions for OpenAI
 const SEARCH_PRODUCTS_FUNCTION = {
   name: "search_products",
   description:
-    "Search for products in the database based on user query. Only use this when the user is asking about specific products, prices, or product information.",
+    "Search for products in the database based on user query. Use this when the user asks about products, pricing, or product information.",
   parameters: {
     type: "object",
     properties: {
@@ -33,6 +43,32 @@ const SEARCH_PRODUCTS_FUNCTION = {
         description: "Maximum number of products to return (default: 3)",
         default: 3,
       },
+      category: {
+        type: "string",
+        description:
+          "Optional category filter (e.g., 'Decals', 'Wraps', 'Banners')",
+      },
+    },
+    required: ["query"],
+  },
+};
+
+const SEARCH_FAQS_FUNCTION = {
+  name: "search_faqs",
+  description:
+    "Search for frequently asked questions across all products. Use this when the user asks general questions about product features, usage, installation, or common concerns.",
+  parameters: {
+    type: "object",
+    properties: {
+      query: {
+        type: "string",
+        description: "The question or topic to search for in FAQs",
+      },
+      limit: {
+        type: "number",
+        description: "Maximum number of FAQs to return (default: 3)",
+        default: 3,
+      },
     },
     required: ["query"],
   },
@@ -41,11 +77,11 @@ const SEARCH_PRODUCTS_FUNCTION = {
 async function searchProducts(
   query: string,
   limit: number = 3,
+  category: string | null = null,
   supabaseClient: any,
   openaiApiKey: string
 ) {
   try {
-    // Compute embedding for the query
     const embRes = await fetch("https://api.openai.com/v1/embeddings", {
       method: "POST",
       headers: {
@@ -65,49 +101,69 @@ async function searchProducts(
 
     if (!Array.isArray(queryEmbedding)) return [];
 
-    let recordsData: any[] = [];
+    const { data, error } = await supabaseClient.rpc("match_records", {
+      query_embedding: queryEmbedding,
+      match_count: limit,
+      similarity_threshold: 0.5,
+      category_filter: category,
+    });
 
-    // Try RPC match_records first
-    try {
-      const { data: rpcData, error: rpcError } = await supabaseClient.rpc(
-        "match_records",
-        { query: queryEmbedding, match_count: limit }
-      );
-      if (rpcError) throw rpcError;
-      recordsData = (rpcData as any) || [];
-    } catch (rpcErr) {
-      console.log(
-        "RPC match_records error, falling back to client-side",
-        rpcErr
-      );
-
-      // Fallback: use client-side similarity
-      try {
-        const { data, error } = await supabaseClient
-          .from("records")
-          .select(
-            "product_ref,title,description,price,url,image_url,technical_data,metadata,embedding"
-          )
-          .neq("embedding", null)
-          .limit(limit)
-          .order("created_at", { ascending: false });
-
-        if (!error && Array.isArray(data)) {
-          recordsData = data as any[];
-        }
-      } catch (e) {
-        // ignore fallback errors
-      }
+    if (error) {
+      console.error("match_records error:", error);
+      return [];
     }
 
-    return recordsData;
+    return data || [];
   } catch (error) {
     console.error("Product search error:", error);
     return [];
   }
 }
 
-// Handle the full conversation cycle including function calls
+async function searchFAQs(
+  query: string,
+  limit: number = 3,
+  supabaseClient: any,
+  openaiApiKey: string
+) {
+  try {
+    const embRes = await fetch("https://api.openai.com/v1/embeddings", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${openaiApiKey}`,
+      },
+      body: JSON.stringify({
+        model: "text-embedding-3-small",
+        input: query,
+      }),
+    });
+
+    if (!embRes.ok) return [];
+
+    const embJson = await embRes.json();
+    const queryEmbedding = embJson.data?.[0]?.embedding;
+
+    if (!Array.isArray(queryEmbedding)) return [];
+
+    const { data, error } = await supabaseClient.rpc("match_faqs", {
+      query_embedding: queryEmbedding,
+      match_count: limit,
+      similarity_threshold: 0.5,
+    });
+
+    if (error) {
+      console.error("match_faqs error:", error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error("FAQ search error:", error);
+    return [];
+  }
+}
+
 async function processConversationWithFunctions(
   messages: IncomingMessage[],
   supabaseClient: any,
@@ -116,20 +172,22 @@ async function processConversationWithFunctions(
   let conversationMessages = [...messages];
 
   while (true) {
-    // Build request to OpenAI
     const payload: any = {
       model: "gpt-4o",
       messages: conversationMessages,
       temperature: 0.7,
-      stream: false, // Use non-streaming for function calls processing
+      stream: false,
     };
 
-    // Add tools if Supabase is configured
     if (supabaseClient) {
       payload.tools = [
         {
           type: "function",
           function: SEARCH_PRODUCTS_FUNCTION,
+        },
+        {
+          type: "function",
+          function: SEARCH_FAQS_FUNCTION,
         },
       ];
       payload.tool_choice = "auto";
@@ -151,9 +209,7 @@ async function processConversationWithFunctions(
     const response = await res.json();
     const assistantMessage = response.choices[0].message;
 
-    // If no tool calls, we're done - return the final streaming response
     if (!assistantMessage.tool_calls) {
-      // Now make a streaming request for the final response
       return makeStreamingRequest(
         conversationMessages,
         openaiApiKey,
@@ -161,7 +217,6 @@ async function processConversationWithFunctions(
       );
     }
 
-    // Execute function calls
     conversationMessages.push(assistantMessage);
 
     for (const toolCall of assistantMessage.tool_calls) {
@@ -171,44 +226,76 @@ async function processConversationWithFunctions(
           const products = await searchProducts(
             args.query,
             args.limit || 3,
+            args.category || null,
             supabaseClient,
             openaiApiKey
           );
 
-          // Format products for the AI
           const productText = products
-            .map((p, idx) => {
-              const title = p.title || p.product_ref || `Product ${idx + 1}`;
-              const desc = p.description || "";
-              const price = p.price != null ? `Price: $${p.price}` : "";
-              const url = p.url || "";
-              const tech = p.technical_data || "";
-              return `${title}: ${desc} ${price} ${url} ${tech}`.trim();
+            .map((p: any) => {
+              const parts = [
+                `Product: ${p.title || p.product_ref}`,
+                p.description ? `Description: ${p.description}` : "",
+                p.price != null ? `Price: $${p.price}` : "",
+                p.url ? `URL: ${p.url}` : "",
+                p.technical_data ? `Details: ${p.technical_data}` : "",
+                p.similarity
+                  ? `(Relevance: ${(p.similarity * 100).toFixed(1)}%)`
+                  : "",
+              ]
+                .filter(Boolean)
+                .join("\n");
+              return parts;
             })
-            .join("\n");
+            .join("\n\n");
 
-          // Add the function result
           conversationMessages.push({
             role: "tool",
             content: productText || "No products found.",
             tool_call_id: toolCall.id,
           });
         } catch (error) {
-          // Add error result
           conversationMessages.push({
             role: "tool",
             content: "Error searching products.",
             tool_call_id: toolCall.id,
           });
         }
+      } else if (toolCall.function.name === "search_faqs" && supabaseClient) {
+        try {
+          const args = JSON.parse(toolCall.function.arguments);
+          const faqs = await searchFAQs(
+            args.query,
+            args.limit || 3,
+            supabaseClient,
+            openaiApiKey
+          );
+
+          const faqText = faqs
+            .map((f: any) => {
+              return `Q: ${f.question}\nA: ${f.answer}\n(Product: ${
+                f.product_ref
+              }, Relevance: ${(f.similarity * 100).toFixed(1)}%)`;
+            })
+            .join("\n\n");
+
+          conversationMessages.push({
+            role: "tool",
+            content: faqText || "No FAQs found.",
+            tool_call_id: toolCall.id,
+          });
+        } catch (error) {
+          conversationMessages.push({
+            role: "tool",
+            content: "Error searching FAQs.",
+            tool_call_id: toolCall.id,
+          });
+        }
       }
     }
-
-    // Continue the loop to get the final response
   }
 }
 
-// Make the final streaming request
 async function makeStreamingRequest(
   messages: IncomingMessage[],
   openaiApiKey: string,
@@ -221,12 +308,15 @@ async function makeStreamingRequest(
     stream: true,
   };
 
-  // Add tools even for streaming (in case more function calls are needed)
   if (supabaseClient) {
     payload.tools = [
       {
         type: "function",
         function: SEARCH_PRODUCTS_FUNCTION,
+      },
+      {
+        type: "function",
+        function: SEARCH_FAQS_FUNCTION,
       },
     ];
     payload.tool_choice = "auto";
@@ -275,14 +365,12 @@ export async function POST(req: Request) {
       });
     }
 
-    // Process the conversation and handle any function calls
     const streamingResponse = await processConversationWithFunctions(
       messages,
       supabase,
       OPENAI_API_KEY
     );
 
-    // Stream the final response (same as your original code)
     const stream = new ReadableStream({
       async start(controller) {
         const reader = streamingResponse.body!.getReader();
@@ -317,7 +405,6 @@ export async function POST(req: Request) {
                 const parsed = JSON.parse(data);
                 const delta = parsed.choices?.[0]?.delta?.content || "";
                 if (delta) {
-                  // Send simplified JSON with just the content (same as original)
                   const payload = JSON.stringify({ content: delta });
                   controller.enqueue(
                     new TextEncoder().encode(`data: ${payload}\n\n`)
@@ -362,10 +449,7 @@ export async function GET(req: Request) {
     const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY)
       return NextResponse.json(
-        {
-          error:
-            "Supabase env not set (SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY)",
-        },
+        { error: "Supabase env not set" },
         { status: 500 }
       );
 
@@ -380,13 +464,7 @@ export async function GET(req: Request) {
       .single();
 
     if (error) {
-      return NextResponse.json(
-        {
-          error: error.message,
-          hint: "If this is a permissions error, check Supabase RLS/policies for `user_chats`.",
-        },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     return NextResponse.json({ chats: data?.chats ?? [] });

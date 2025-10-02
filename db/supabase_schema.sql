@@ -1,7 +1,10 @@
+-- Enable required extensions
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE EXTENSION IF NOT EXISTS vector;
 
--- user_chats table
+-- ============================================
+-- USER CHAT SESSIONS TABLE
+-- ============================================
 CREATE TABLE IF NOT EXISTS user_chats (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   session_id text NOT NULL UNIQUE,
@@ -11,7 +14,9 @@ CREATE TABLE IF NOT EXISTS user_chats (
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
--- records table (embedding dimension fixed at 1536)
+-- ============================================
+-- PRODUCTS TABLE (records)
+-- ============================================
 CREATE TABLE IF NOT EXISTS records (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   product_ref text UNIQUE,
@@ -21,13 +26,36 @@ CREATE TABLE IF NOT EXISTS records (
   url text,
   image_url text,
   metadata jsonb DEFAULT '{}'::jsonb,
+  faq jsonb DEFAULT '[]'::jsonb,
   technical_data text DEFAULT ''::text,
   embedding vector(1536),
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
--- shared trigger function to update `updated_at`
+-- ============================================
+-- PRODUCT FAQs TABLE
+-- ============================================
+CREATE TABLE IF NOT EXISTS product_faqs (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  product_ref text NOT NULL REFERENCES records(product_ref) ON DELETE CASCADE,
+  question text NOT NULL,
+  answer text NOT NULL,
+  embedding vector(1536),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- ============================================
+-- INDEXES
+-- ============================================
+CREATE INDEX IF NOT EXISTS idx_records_embedding ON records USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
+CREATE INDEX IF NOT EXISTS idx_faq_embedding ON product_faqs USING ivfflat (embedding vector_cosine_ops) WITH (lists = 50);
+CREATE INDEX IF NOT EXISTS idx_faq_product_ref ON product_faqs(product_ref);
+
+-- ============================================
+-- TRIGGERS
+-- ============================================
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -36,7 +64,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- attach triggers
 DROP TRIGGER IF EXISTS trg_user_chats_updated_at ON user_chats;
 CREATE TRIGGER trg_user_chats_updated_at
   BEFORE UPDATE ON user_chats
@@ -49,31 +76,80 @@ CREATE TRIGGER trg_records_updated_at
   FOR EACH ROW
   EXECUTE PROCEDURE update_updated_at_column();
 
--- make sure existing databases get the new column (safe: only run if table exists)
-DO $$
-BEGIN
-  IF EXISTS (
-    SELECT 1 FROM pg_tables WHERE schemaname NOT IN ('pg_catalog', 'information_schema') AND tablename = 'records'
-  ) THEN
-    ALTER TABLE records
-      ADD COLUMN IF NOT EXISTS technical_data text DEFAULT ''::text;
-  END IF;
-END
-$$;
+DROP TRIGGER IF EXISTS trg_faqs_updated_at ON product_faqs;
+CREATE TRIGGER trg_faqs_updated_at
+  BEFORE UPDATE ON product_faqs
+  FOR EACH ROW
+  EXECUTE PROCEDURE update_updated_at_column();
 
--- vector index for records.embedding
-CREATE INDEX IF NOT EXISTS idx_records_embedding ON records USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
+-- ============================================
+-- SEARCH FUNCTIONS
+-- ============================================
 
--- helper SQL function to perform similarity search against records.embedding
--- Returns the top `match_count` records ordered by distance to the provided vector
--- Note: uses the pgvector distance operator <-> which works with vector indexes
-CREATE OR REPLACE FUNCTION match_records(query vector(1536), match_count int DEFAULT 5)
-RETURNS SETOF records
+-- Enhanced Product Search
+CREATE OR REPLACE FUNCTION match_records(
+  query_embedding vector(1536), 
+  match_count int DEFAULT 5,
+  similarity_threshold float DEFAULT 0.5,
+  category_filter text DEFAULT NULL
+)
+RETURNS TABLE (
+  id uuid,
+  product_ref text,
+  title text,
+  description text,
+  price numeric,
+  url text,
+  image_url text,
+  metadata jsonb,
+  technical_data text,
+  similarity float
+) 
 LANGUAGE sql STABLE
 AS $$
-  SELECT r.* FROM records r
+  SELECT 
+    r.id,
+    r.product_ref,
+    r.title,
+    r.description,
+    r.price,
+    r.url,
+    r.image_url,
+    r.metadata,
+    r.technical_data,
+    1 - (r.embedding <=> query_embedding) as similarity
+  FROM records r
   WHERE r.embedding IS NOT NULL
-  ORDER BY r.embedding <-> query
+    AND 1 - (r.embedding <=> query_embedding) > similarity_threshold
+    AND (category_filter IS NULL OR r.metadata->>'category' = category_filter)
+  ORDER BY r.embedding <=> query_embedding
   LIMIT match_count;
 $$;
 
+-- FAQ Search
+CREATE OR REPLACE FUNCTION match_faqs(
+  query_embedding vector(1536), 
+  match_count int DEFAULT 5,
+  similarity_threshold float DEFAULT 0.5
+)
+RETURNS TABLE (
+  id uuid,
+  product_ref text,
+  question text,
+  answer text,
+  similarity float
+) 
+LANGUAGE sql STABLE
+AS $$
+  SELECT 
+    f.id,
+    f.product_ref,
+    f.question,
+    f.answer,
+    1 - (f.embedding <=> query_embedding) as similarity
+  FROM product_faqs f
+  WHERE f.embedding IS NOT NULL
+    AND 1 - (f.embedding <=> query_embedding) > similarity_threshold
+  ORDER BY f.embedding <=> query_embedding
+  LIMIT match_count;
+$$;
