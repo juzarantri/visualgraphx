@@ -90,8 +90,51 @@
 }
 
 .messageContent {
-  white-space: pre-wrap;
+  /* white-space: pre-wrap; */
   color: #0f172a;
+}
+
+/* Markdown list styles inside message content */
+
+.messageContent :where(ul, ol) {
+  /* ensure lists have indentation and bullets/numbers appear outside the text flow */
+  padding-left: 1.25rem; /* give room for the marker */
+  margin: 0.5rem 0;
+  list-style-position: outside;
+}
+
+/* unordered lists: use different marker types for nested levels so they look distinct */
+.messageContent ul {
+  list-style-type: disc;
+}
+.messageContent ul ul {
+  list-style-type: circle;
+}
+.messageContent ul ul ul {
+  list-style-type: square;
+}
+
+/* ordered lists: cascade to alpha/roman for nested levels */
+.messageContent ol {
+  list-style-type: decimal;
+}
+.messageContent ol ol {
+  list-style-type: lower-alpha;
+}
+.messageContent ol ol ol {
+  list-style-type: lower-roman;
+}
+
+.messageContent li {
+  margin: 0.25rem 0;
+}
+
+/* nested lists should indent further */
+.messageContent ul ul,
+.messageContent ol ol,
+.messageContent ul ol,
+.messageContent ol ul {
+  padding-left: 1.1rem;
 }
 
 .inputRow {

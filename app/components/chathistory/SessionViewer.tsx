@@ -27,7 +27,7 @@ export default function SessionViewer({
   const session = sessions.find((s) => s.session_id === selected);
 
   return (
-    <div>
+    <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
       <div className={css.sessionHeader}>
         <strong className={css.sessionHeaderStrong}>{selected}</strong>
         <div className={css.sessionHeaderMeta}>

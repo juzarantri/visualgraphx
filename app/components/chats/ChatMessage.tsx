@@ -1,5 +1,7 @@
 "use client";
 import React from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import styles from "./Chat.module.css";
 import type { ChatMessage as MessageType } from "./types";
 
@@ -47,7 +49,15 @@ export default function ChatMessage({ message }: { message: MessageType }) {
               : ""}
           </span>
         </div>
-        <div className={styles.messageContent}>{message.content}</div>
+        <div className={styles.messageContent}>
+          {message.role === "assistant" ? (
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {message.content ?? ""}
+            </ReactMarkdown>
+          ) : (
+            <div>{message.content}</div>
+          )}
+        </div>
       </div>
     </div>
   );
