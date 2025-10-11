@@ -90,8 +90,6 @@ CREATE TRIGGER trg_faqs_updated_at
 CREATE OR REPLACE FUNCTION match_records(
   query_embedding vector(1536), 
   match_count int DEFAULT 5
-  -- similarity_threshold float DEFAULT 0.5,
-  -- category_filter text DEFAULT NULL
 )
 RETURNS TABLE (
   id uuid,
@@ -119,12 +117,54 @@ AS $$
     r.technical_data,
     1 - (r.embedding <=> query_embedding) as similarity
   FROM records r
-  -- WHERE r.embedding IS NOT NULL
-    -- AND 1 - (r.embedding <=> query_embedding) > similarity_threshold
-    -- AND (category_filter IS NULL OR r.metadata->>'category' = category_filter)
   ORDER BY r.embedding <=> query_embedding
   LIMIT match_count;
 $$;
+
+-- Drop existing function if it exists
+DROP FUNCTION IF EXISTS match_records_hybrid(vector(1536), int, numeric, numeric);
+
+-- Create the new hybrid search function
+CREATE OR REPLACE FUNCTION match_records_hybrid(
+  query_embedding vector(1536), 
+  match_count int DEFAULT 5,
+  min_price_filter numeric DEFAULT NULL,
+  max_price_filter numeric DEFAULT NULL
+)
+RETURNS TABLE (
+  id uuid,
+  product_ref text,
+  title text,
+  description text,
+  price numeric,
+  url text,
+  image_url text,
+  metadata jsonb,
+  technical_data text,
+  similarity float
+) 
+LANGUAGE sql STABLE
+AS $$
+  SELECT 
+    r.id,
+    r.product_ref,
+    r.title,
+    r.description,
+    r.price,
+    r.url,
+    r.image_url,
+    r.metadata,
+    r.technical_data,
+    1 - (r.embedding <=> query_embedding) as similarity
+  FROM records r
+  WHERE 
+    -- Apply price filters only if they are provided
+    (min_price_filter IS NULL OR r.price >= min_price_filter)
+    AND (max_price_filter IS NULL OR r.price <= max_price_filter)
+  ORDER BY r.embedding <=> query_embedding
+  LIMIT match_count;
+$$;
+
 
 -- FAQ Search
 CREATE OR REPLACE FUNCTION match_faqs(

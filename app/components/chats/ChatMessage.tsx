@@ -51,7 +51,18 @@ export default function ChatMessage({ message }: { message: MessageType }) {
         </div>
         <div className={styles.messageContent}>
           {message.role === "assistant" ? (
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              // render links so they open in a new tab and are safe
+              components={{
+                a: ({ node, ...props }) => (
+                  // ensure external navigation opens in a new tab and use noopener for security
+                  // `props.href` can be undefined for some markdown, so guard it
+                  // eslint-disable-next-line jsx-a11y/anchor-has-content
+                  <a {...props} target={props.href ? "_blank" : undefined} rel={props.href ? "noopener noreferrer" : undefined} />
+                ),
+              }}
+            >
               {message.content ?? ""}
             </ReactMarkdown>
           ) : (
