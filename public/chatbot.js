@@ -10,9 +10,12 @@ optional: open the widget immediately
   if (window.VGXChat && window.VGXChat.__loaded) return;
 
   const DEFAULT_STYLES = `
-  .vgx-chat-bubble { position: fixed; right: 24px; bottom: 24px; width: 64px; height: 64px; border-radius: 999px; background: linear-gradient(135deg,#3b82f6 0%,#06b6d4 100%); box-shadow: 0 8px 24px rgba(2,6,23,0.2); display:flex;align-items:center;justify-content:center;color:white;font-weight:700;cursor:pointer;z-index:2147483646 }
-  .vgx-chat-iframe-wrap { position: fixed; right: 24px; bottom: 100px; width: 380px; height: 560px; box-shadow: 0 12px 40px rgba(2,6,23,0.3); border-radius: 12px; overflow: hidden; z-index:2147483646; transform-origin: bottom right; transition: transform 180ms ease, opacity 180ms ease; }
-  .vgx-chat-iframe-wrap.hidden { transform: scale(0.9); opacity: 0; pointer-events: none }
+  :root{--vgx-purple:#6b46ff;}
+  .vgx-chat-bubble { position: fixed; right: 24px; bottom: 24px; height: 48px; padding: 0 16px; border-radius: 999px; background: var(--vgx-purple); box-shadow: 0 8px 24px rgba(2,6,23,0.18); display:flex;align-items:center;justify-content:center;color:white;font-weight:700;cursor:pointer;z-index:2147483646; gap:10px; border: none; }
+  .vgx-chat-bubble .vgx-logo { width: 22px; height: 22px; display:inline-flex; flex-shrink:0 }
+  .vgx-chat-bubble .vgx-text { font-weight:700; color: #fff; font-size:14px; line-height:1 }
+  .vgx-chat-iframe-wrap { position: fixed; right: 24px; bottom: 88px; width: 360px; height: 580px; box-shadow: 0 12px 40px rgba(2,6,23,0.28); border-radius: 12px; overflow: hidden; z-index:2147483646; transform-origin: bottom right; transition: transform 180ms ease, opacity 180ms ease; }
+  .vgx-chat-iframe-wrap.hidden { transform: scale(0.96); opacity: 0; pointer-events: none }
   .vgx-chat-iframe { width:100%; height:100%; border:0; background:transparent }
   `;
 
@@ -35,7 +38,16 @@ optional: open the widget immediately
     bubble.className = "vgx-chat-bubble";
     bubble.setAttribute("aria-label", "Open chat");
     bubble.title = "Open chat";
-    bubble.innerText = "Chat";
+    // inline SVG logo (simple stylized mark) + text to match Ask GraphX pill
+    bubble.innerHTML = `
+      <span class="vgx-logo" aria-hidden>
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="22" height="22">
+          <path d="M4 12c0 4.418 3.582 8 8 8s8-3.582 8-8-3.582-8-8-8S4 7.582 4 12z" fill="rgba(255,255,255,0.06)"/>
+          <path d="M7.5 12L11 9l3.5 3-3.5 3L7.5 12z" fill="#fff" />
+        </svg>
+      </span>
+      <span class="vgx-text">Ask GraphX</span>
+    `;
 
     iframeWrap = doc.createElement("div");
     iframeWrap.className = "vgx-chat-iframe-wrap hidden";

@@ -143,9 +143,117 @@ export default function Chat() {
       <div className={styles.chatInner}>
         <div ref={scrollRef} className={styles.scrollArea}>
           {messages.length === 0 ? (
-            <div className={styles.emptyState}>
-              No messages yet — start the conversation.
-            </div>
+            <>
+              <div className={styles.embedHeader}>
+                <div className={styles.embedLogo}>
+                  <svg
+                    viewBox="0 0 48 48"
+                    width="56"
+                    height="56"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <rect width="48" height="48" rx="12" fill="#fbf8ff" />
+                    <path d="M15 24l6-4 6 4-6 4-6-4z" fill="#6b46ff" />
+                  </svg>
+                </div>
+                <div className={styles.greeting}>
+                  Hi — I&apos;m GraphX, your friendly product assistant.
+                </div>
+                <div className={styles.subtitle}>How can I help you today?</div>
+              </div>
+
+              <div className={styles.suggestions}>
+                <div
+                  className={styles.suggestionCard}
+                  onClick={() =>
+                    send(
+                      "Show me outdoor decal products, with pricing and available sizes"
+                    )
+                  }
+                >
+                  <div className={styles.suggestionIconWrap}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                      <path
+                        d="M4 7h16M4 12h16M4 17h16"
+                        stroke="#111827"
+                        strokeWidth="1.4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className={styles.suggestionTitle}>
+                      Find products & pricing
+                    </div>
+                    <div className={styles.suggestionDesc}>
+                      Looking for products, prices, or sizes? I can fetch
+                      matching items and details.
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  className={styles.suggestionCard}
+                  onClick={() =>
+                    send(
+                      "How do I install vinyl wraps? Step-by-step installation tips and recommended tools"
+                    )
+                  }
+                >
+                  <div className={styles.suggestionIconWrap}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                      <path
+                        d="M3 12h18M12 3v18"
+                        stroke="#111827"
+                        strokeWidth="1.4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className={styles.suggestionTitle}>
+                      Installation & tips
+                    </div>
+                    <div className={styles.suggestionDesc}>
+                      Get step-by-step installation guidance and recommended
+                      tools for wraps.
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  className={styles.suggestionCard}
+                  onClick={() =>
+                    send(
+                      "Help me compare similar products and recommend one based on price and features"
+                    )
+                  }
+                >
+                  <div className={styles.suggestionIconWrap}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                      <path
+                        d="M6 6h12v12H6z"
+                        stroke="#111827"
+                        strokeWidth="1.2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className={styles.suggestionTitle}>
+                      Compare & recommend
+                    </div>
+                    <div className={styles.suggestionDesc}>
+                      Compare products by features, pricing, and recommended
+                      use-cases.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
           ) : (
             messages.map((m, i) => <ChatMessage key={i} message={m} />)
           )}

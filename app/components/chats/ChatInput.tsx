@@ -33,31 +33,56 @@ export default function ChatInput({ onSend, disabled }: Props) {
   };
 
   return (
-    <div className={styles.inputRow}>
-      <TextArea
-        ref={(node) => {
-          const el =
-            (node as any)?.resizableTextArea?.textArea ||
-            (node as unknown as HTMLTextAreaElement | null);
-          textareaRef.current = el ?? null;
-        }}
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onKeyDown={onKeyDown}
-        placeholder="Type a message — press Ctrl+Enter to send"
-        autoSize={{ minRows: 2, maxRows: 6 }}
-        disabled={disabled}
-      />
-
-      <div className={styles.sendWrap}>
-        <Button
-          type="primary"
-          onClick={handleSend}
-          loading={disabled}
+    <div className={styles.inputArea}>
+      <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
+        <TextArea
+          className={styles.textAreaRounded}
+          ref={(node) => {
+            const el =
+              (node as any)?.resizableTextArea?.textArea ||
+              (node as unknown as HTMLTextAreaElement | null);
+            textareaRef.current = el ?? null;
+          }}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={onKeyDown}
+          placeholder="Write your question"
+          autoSize={{ minRows: 2, maxRows: 6 }}
           disabled={disabled}
+        />
+        <button
+          aria-label="Send"
+          className={styles.sendIconBtn}
+          onClick={handleSend}
+          disabled={disabled}
+          title="Send"
         >
-          Send
-        </Button>
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M22 2L11 13"
+              stroke="#374151"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M22 2L15 22L11 13L2 9L22 2Z"
+              stroke="#374151"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
+      </div>
+      <div className={styles.footerNote}>
+        GraphX may produce inaccurate information
       </div>
     </div>
   );
