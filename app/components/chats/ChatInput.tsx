@@ -23,9 +23,45 @@ export default function ChatInput({ onSend, disabled }: Props) {
     if (!trimmed) return;
     onSend(trimmed);
     setValue("");
+    // focus back to textarea after sending so user can continue typing
+    setTimeout(() => {
+      try {
+        textareaRef.current?.focus();
+      } catch (e) {
+        /* best-effort */
+      }
+    }, 0);
   };
 
+  // when disabled transitions from true -> false, restore focus
+  const prevDisabledRef = useRef<boolean | undefined>(disabled);
+  useEffect(() => {
+    if (prevDisabledRef.current && !disabled) {
+      // focus when we finished loading/disabled state
+      try {
+        textareaRef.current?.focus();
+      } catch (e) {
+        /* best-effort */
+      }
+    }
+    prevDisabledRef.current = disabled;
+  }, [disabled]);
+
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Enter to send, Shift+Enter to insert newline. Keep Ctrl/Cmd+Enter as a fallback.
+    if (e.key === "Enter") {
+      if (e.shiftKey) {
+        // allow newline
+        return;
+      }
+      // If user pressed plain Enter (no shift), send message
+      if (!e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        handleSend();
+        return;
+      }
+    }
+
     if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
       e.preventDefault();
       handleSend();

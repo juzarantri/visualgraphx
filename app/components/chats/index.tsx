@@ -10,6 +10,7 @@ export default function Chat() {
   const [messages, setMessages] = useState<MessageType[]>([]);
   const messagesRef = useRef<MessageType[]>(messages);
   const [loading, setLoading] = useState(false);
+  const [assistantTyping, setAssistantTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   // generate a new session id per mount (in-memory only). Use useEffect so
   // a new id is created on every mount/refresh and not preserved by React Fast Refresh.
@@ -45,6 +46,8 @@ export default function Chat() {
       content: "",
     };
     setMessages((prev) => [...prev, assistantPlaceholder]);
+    // Start typing indicator immediately so the UI shows "assistant is typing"
+    setAssistantTyping(true);
 
     setLoading(true);
     try {
@@ -110,6 +113,9 @@ export default function Chat() {
         messagesRef.current = copy;
         return copy;
       });
+
+      // streaming finished -> stop typing indicator
+      setAssistantTyping(false);
 
       const persist = async () => {
         try {
@@ -255,7 +261,39 @@ export default function Chat() {
               </div>
             </>
           ) : (
-            messages.map((m, i) => <ChatMessage key={i} message={m} />)
+            messages.map((m, i) => {
+              // If assistant message exists but is empty and we're streaming, show typing indicator
+              if (
+                m.role === "assistant" &&
+                (!m.content || m.content === "") &&
+                assistantTyping
+              ) {
+                return (
+                  <div
+                    key={i}
+                    className={styles.messageRow}
+                    data-role="assistant"
+                  >
+                    <div className={styles.avatar} aria-hidden>
+                      A
+                    </div>
+                    <div className={styles.messageBubble}>
+                      <div className={styles.messageMeta}>
+                        <span>Assistant</span>
+                      </div>
+                      <div className={styles.messageContent}>
+                        <span className={styles.typingDots} aria-hidden>
+                          <span />
+                          <span />
+                          <span />
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+              return <ChatMessage key={i} message={m} />;
+            })
           )}
         </div>
 

@@ -154,6 +154,12 @@
   color: #0f172a;
 }
 
+.typingDots { display:inline-flex; gap:6px; align-items:center }
+.typingDots span { width:8px; height:8px; background:#cbd5e1; border-radius:999px; display:inline-block; transform: translateY(0); animation: typing 1s infinite ease-in-out; }
+.typingDots span:nth-child(2) { animation-delay: 0.15s }
+.typingDots span:nth-child(3) { animation-delay: 0.3s }
+@keyframes typing { 0% { transform: translateY(0); opacity: 0.6 } 50% { transform: translateY(-6px); opacity: 1 } 100% { transform: translateY(0); opacity: 0.6 } }
+
 /* Links inside markdown-rendered assistant messages */
 .messageContent a {
   color: #2563eb; /* blue-600 */

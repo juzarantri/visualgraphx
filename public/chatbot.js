@@ -80,7 +80,10 @@ optional: open the widget immediately
 
     // wire up events now that nodes exist
     bubble.addEventListener("click", function (e) {
+      // prevent the document-level click handler from treating this as a
+      // click-outside. Also prevent default to avoid accidental form submits.
       e.preventDefault();
+      e.stopPropagation();
       if (!open) show();
       else hide();
     });
@@ -162,7 +165,12 @@ optional: open the widget immediately
   function onDocClick(ev) {
     if (!open) return;
     const target = ev.target;
-    if (bubble && target === bubble) return;
+    // if the click is the bubble itself or any element inside it, don't close
+    if (
+      bubble &&
+      (target === bubble || (bubble.contains && bubble.contains(target)))
+    )
+      return;
     if (iframeWrap && iframeWrap.contains && iframeWrap.contains(target))
       return;
     hide();
